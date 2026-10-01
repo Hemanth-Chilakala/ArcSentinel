@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ArcSentinel - Technical Brief</title>
+<style>
+  @page { size: 8.5in 11in; margin: 0.55in 0.6in 0.6in 0.6in; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", "Inter", Arial, sans-serif; color: #1b2330; font-size: 9.5pt; line-height: 1.36;
+         margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  h1 { font-size: 23pt; margin: 0; letter-spacing: -0.4px; }
+  h1 span { color: #d9480f; }
+  .subtitle { font-size: 12pt; color: #495057; margin: 2px 0 10px; }
+  .meta { display: flex; justify-content: space-between; font-size: 9pt; color: #495057;
+          border-top: 2.5px solid #1b2330; border-bottom: 1px solid #ced4da; padding: 5px 0; margin-bottom: 12px; }
+  .meta b { color: #1b2330; }
+  h2 { font-size: 13.5pt; margin: 14px 0 5px; padding-bottom: 3px; border-bottom: 1.5px solid #e8590c; color: #1b2330;
+       page-break-after: avoid; }
+  h2 .n { color: #d9480f; margin-right: 6px; }
+  h3 { font-size: 11pt; margin: 12px 0 4px; page-break-after: avoid; }
+  p { margin: 0 0 7px; }
+  ul { margin: 2px 0 8px 18px; padding: 0; }
+  li { margin: 2px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 4px 0 10px; page-break-inside: avoid; }
+  th { background: #1b2330; color: #fff; text-align: left; padding: 5px 6px; font-weight: 600; }
+  td { padding: 4px 6px; border-bottom: 1px solid #dee2e6; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8f9fa; }
+  .kpis { display: flex; gap: 8px; margin: 8px 0 12px; }
+  .kpis div { flex: 1; background: #fff4e6; border-radius: 6px; padding: 7px 6px; text-align: center; }
+  .kpis b { display: block; font-size: 18pt; color: #d9480f; line-height: 1.1; }
+  .kpis small { font-size: 8pt; color: #495057; line-height: 1.2; display: block; }
+  .callout { background: #f1f3f5; border-left: 4px solid #1c7ed6; padding: 7px 10px; margin: 8px 0; font-size: 9.6pt; page-break-inside: avoid; }
+  .callout.warn { border-left-color: #e8590c; background: #fff9f2; }
+  figure { margin: 6px 0 10px; text-align: center; page-break-inside: avoid; }
+  figure img { max-width: 100%; }
+  figcaption { font-size: 8.6pt; color: #495057; margin-top: 2px; text-align: left; }
+  .two { display: flex; gap: 12px; align-items: flex-start; }
+  .two > * { flex: 1; }
+  .gantt td { padding: 2px 0; text-align: center; font-size: 7.5pt; border-bottom: 1px solid #fff; }
+  .gantt td.lbl { text-align: left; padding: 2px 6px; font-size: 7.9pt; width: 47%; white-space: nowrap; background: #fff !important; }
+  .gantt th { font-size: 7.3pt; padding: 3px 0; text-align: center; }
+  .gantt th.lbl { text-align: left; padding-left: 6px; }
+  .g1 { background: #ffd8a8 !important; } .g2 { background: #96f2d7 !important; } .g3 { background: #a5d8ff !important; }
+  .g4 { background: #d0bfff !important; } .gm { background: #e03131 !important; color: #fff; font-weight: 700; }
+  .g0 { background: #dee2e6 !important; }
+  .pb { page-break-before: always; }
+  .small { font-size: 8.6pt; color: #495057; }
+  code { font-family: Consolas, monospace; font-size: 8.8pt; background: #f1f3f5; padding: 0 3px; border-radius: 3px; }
+  .ref li { font-size: 8.6pt; margin: 1px 0; }
+</style>
+</head>
+<body>
+
+<h1>Arc<span>Sentinel</span></h1>
+<div class="subtitle">FPGA-accelerated detection &amp; protection against high-impedance (downed and arcing conductor) faults<br>
+<b>Technical brief supporting the proposal</b>: feasibility evidence, implementation plan, risks</div>
+<div class="meta"><span><b>Track 2</b> &middot; PolarFire&reg; SoC Icicle Kit (MPFS250T)</span><span>Team: <b>ArcSentinel</b> &middot; Hemanth Chilakala (lead), Tanmaya Kumar</span><span>v1.1 &middot; Oct 2026</span></div>
+
+<p><b>In one sentence:</b> ArcSentinel turns the Icicle Kit into a three-layer, mixed-criticality protection relay. FPGA fabric analyses every power cycle with FFT, wavelet and int8-neural-network engines to find the faint, erratic signature of a downed live conductor. A bare-metal RISC-V hart makes the trip decision deterministically, and Linux reports it over redundant IEC 61850 networks.</p>
+
+<div class="kpis">
+  <div><b>98.3%</b><small>synthetic HIFs detected<br>(0.5&ndash;50 A, held-out)</small></div>
+  <div><b>2.5%</b><small>51N + inrush restraint<br>on the same faults</small></div>
+  <div><b>0 / 720</b><small>ArcSentinel false alarms<br>on look-alike events</small></div>
+  <div><b>0.28 s</b><small>median detection<br>time after onset</small></div>
+  <div><b>1,520</b><small>MAC per inference<br>(fits easily in fabric)</small></div>
+</div>
+
+<h2><span class="n">1</span>The problem</h2>
+<p>A high-impedance fault (HIF) occurs when an energised distribution conductor touches a poorly conducting surface such as dry grass, sand, asphalt, concrete or a tree branch. The resulting current is often only a few amperes to a few tens of amperes, comparable to normal load unbalance. Overcurrent relays set above that unbalance therefore never see it. Meanwhile the contact arcs, randomly and asymmetrically, at thousands of degrees. The line stays energised, so the arc can ignite vegetation, and a live wire lying on a street or field is lethal to anyone who touches it. Power lines were implicated in the 2018 Camp Fire in California [4], the deadliest in the state&rsquo;s history, and in the 2023 Lahaina fire on Maui.</p>
+<p>HIFs are hard to detect because their only reliable fingerprints are subtle. They include harmonic and interharmonic content, high-frequency energy at each arc re-ignition, half-cycle asymmetry, and above all <i>cycle-to-cycle randomness</i> [1, 2]. Everyday events share parts of that signature: transformer inrush, capacitor switching, welders, rectifier loads and load steps. Separating them needs rich, continuous, multi-channel signal analysis with a dependable real-time decision path, which is exactly what an FPGA SoC offers.</p>
+
+<h2><span class="n">2</span>Prior art, and what is actually new</h2>
+<p>HIF detection itself is not new, and we do not claim it is. The table summarises what exists and the gap ArcSentinel targets.</p>
+<table>
+  <tr><th style="width:22%">Approach</th><th style="width:34%">Examples</th><th>Limitation relevant to us</th></tr>
+  <tr><td>HIF functions in premium feeder relays</td><td>SEL Arc Sense Technology; GE Multilin Hi-Z; similar functions from other major vendors</td><td>Proprietary, closed algorithms tied to high-end relay platforms; costly to deploy across many rural feeders</td></tr>
+  <tr><td>Research edge device (closest to us)</td><td>UNSW / NewSouth Innovations, US&nbsp;12,032,037&nbsp;B2 (granted 2024) [6]: FPGA framing and FFT, log band-energy &ldquo;image&rdquo;, lightweight CNN on a processor, pole-mounted; 98.67% offline accuracy</td><td>Classification runs on a processor (115 ms worst-case latency on its real-time testbed); no independent hard-wired protection path, redundant networking or built-in self-test described</td></tr>
+  <tr><td>Network-level and sensor approaches</td><td>REFCL earth-fault current limiters (Victoria, Australia); SDG&amp;E falling-conductor protection; line sensors such as IND Technology EFD and Gridware</td><td>Substation-scale capital equipment, or sensing that complements rather than replaces a protection decision at the feeder</td></tr>
+</table>
+<p><b>What is new in ArcSentinel:</b></p>
+<ul>
+  <li><b>Mixed-criticality protection on one chip.</b> A hard-wired fabric protection path, a deterministic bare-metal decision hart and a Linux communications stack share one PolarFire SoC, isolated so that <i>a software crash or network attack cannot block a trip</i>. We found no HIF device that separates these layers.</li>
+  <li><b>Every stage of detection in fabric, at fixed latency.</b> Feature extraction <i>and</i> int8 inference run as dedicated logic (target &lt; 50 &micro;s per cycle, &lt; 1 &micro;s jitter). The method also differs from the patented approach: interpretable physical features (harmonics, wavelet energy, asymmetry, randomness, 3rd-harmonic phase) feed a tiny MLP, instead of a band-energy image feeding a CNN.</li>
+  <li><b>Digital-twin replay self-test.</b> The fabric can replay recorded faults in place of the ADC for bit-exact, in-field verification.</li>
+  <li><b>Standards-native and redundant.</b> IEC 61850 GOOSE over PRP on both GbE ports, PTP-timestamped COMTRADE records.</li>
+  <li><b>Open and measured.</b> Open golden model and benchmark; fabric-versus-CPU latency, jitter and energy measured from the same C++ source.</li>
+</ul>
+
+<h2><span class="n">3</span>Why PolarFire SoC, and why the Icicle Kit</h2>
+<p><b>&ldquo;Couldn&rsquo;t a microcontroller do this?&rdquo;</b> The arithmetic per cycle is modest. The <i>system</i> requirements are what demand the FPGA SoC:</p>
+<ul>
+  <li><b>Determinism and isolation.</b> Protection must never miss a sample or a deadline, and must keep working when higher-level software fails. In fabric, sampling, analysis and overcurrent protection are dedicated circuits with identical latency every cycle, independent of caches, interrupts or an OS.</li>
+  <li><b>Concurrency.</b> Lock-step capture of 8 channels, a per-cycle FFT on every channel, wavelet and randomness features, waveform recording, inference and classic protection all run simultaneously, with none of them competing for a CPU.</li>
+  <li><b>Scalability.</b> More feeders means replicating fabric lanes, not re-validating software timing.</li>
+  <li><b>Mixed criticality on one chip.</b> The MSS&rsquo;s AMP support lets a bare-metal decision hart and a Linux communications stack coexist, isolated by PMP, and supervised by the E51 monitor.</li>
+  <li><b>Field reliability.</b> PolarFire&rsquo;s non-volatile, SEU-immune configuration, secure boot and ECC-protected memories suit unattended outdoor equipment.</li>
+</ul>
+<p>We will <b>quantify</b> this rather than just assert it. SmartHLS sources are plain C++, so the same feature-and-inference code is compiled for the U54 cores and benchmarked against the fabric for latency, p99.9 jitter, CPU load and energy (from the on-board PAC1934).</p>
+
+<table>
+  <tr><th style="width:30%">Icicle Kit capability</th><th>How ArcSentinel uses it</th></tr>
+  <tr><td>254K LE fabric + Math blocks + LSRAM</td><td>ADC sequencer, CoreFFT, SmartHLS feature engine, int8 MLP, 50/51N protection, replay injector, recorder</td></tr>
+  <tr><td>5-core RISC-V MSS, AMP</td><td>Hart 4 bare-metal protection decision; harts 1&ndash;3 Linux; E51 HSS supervision (secure boot, watchdog, ECC scrub)</td></tr>
+  <tr><td>Dual Gigabit Ethernet (GEM0/GEM1)</td><td>IEC 62439-3 PRP redundant station bus; IEEE 1588 PTP time sync on the GEM</td></tr>
+  <tr><td>2 GB LPDDR4, eMMC</td><td>Replay &amp; pre/post-trigger waveform buffers; COMTRADE archive and rootfs</td></tr>
+  <tr><td>PAC1934 power monitor</td><td>Per-rail power &rarr; energy per analysed cycle, fabric vs software</td></tr>
+  <tr><td>40-pin header (fabric I/O), mikroBUS, LEDs, switches</td><td>MCP3914B ADC link with fabric-timed SPI; trip relay output; alarm LEDs; test buttons</td></tr>
+</table>
+
+<h2><span class="n">4</span>Architecture</h2>
+<p>See the accompanying <b>System Block Diagram</b> (2 pages). In summary:</p>
+<ul>
+  <li><b>Acquisition.</b> A Microchip <b>MCP3914B</b> (8-ch, 24-bit, simultaneous-sampling &Delta;&Sigma; ADC; the revision Microchip recommends for new designs) samples Va, Vb, Vc, Ia, Ib, Ic and In at 25.6 kS/s (512 samples per 50 Hz cycle). A fabric RTL sequencer owns the SPI link, so sample timing is set by a PF_CCC clock disciplined to PTP time. A <b>replay injector</b> can substitute waveforms from LPDDR4 for bit-exact testing.</li>
+  <li><b>Fabric analysis.</b> Per cycle and per channel: CoreFFT 512-point spectrum (h1&ndash;h25 plus interharmonic energy), Haar DWT D1/D2 high-frequency energy, half-cycle asymmetry, cycle-to-cycle difference energy, and 3rd-harmonic angle against voltage. A window-statistics block forms 28 inputs (mean and &sigma; over 10 cycles, every 2 cycles) for the <b>int8 MLP 28-32-16-7</b>. Hard-wired 50/51 and 50N/51N elements run in parallel, straight to the trip output.</li>
+  <li><b>Decision (U54 #4, bare metal).</b> Declares an HIF after 5 consecutive HIF windows, applies inrush and switching blocking and the utility&rsquo;s alarm-or-trip policy, and timestamps events. Code runs from L2 scratchpad for determinism. This hart split (Linux on U54 #1&ndash;3, bare metal on U54 #4) is exactly Microchip&rsquo;s officially supported Icicle Kit AMP configuration.</li>
+  <li><b>Communications (U54 #1&ndash;3, Linux).</b> libiec61850 GOOSE trip publisher and MMS server, PRP via the Linux HSR/PRP driver across both ports, linuxptp, COMTRADE records, web HMI, signed model and bitstream updates. It talks to hart 4 over RPMsg (OpenAMP).</li>
+</ul>
+
+<h2><span class="n">5</span>Pre-proposal feasibility study</h2>
+<p>Before applying, we built a Python golden model (<code>feasibility/arcsentinel_model.py</code>) that implements the exact feature set, window logic, int8 quantization and security counter planned for hardware. HIFs use the classic Emanuel two-diode arc model [1]. Its breakdown voltages are random and asymmetric, its resistances vary cycle to cycle, and it adds build-up, intermittent extinction and HF bursts at re-ignition. Arc currents are drawn log-uniformly from 0.5 to 50 A rms, so the range reaches down to the sub-ampere currents typical of vegetation contact. HIFs are placed on a simulated 11 kV feeder with noise, &plusmn;0.1 Hz frequency drift and realistic unbalance, and tested against six look-alike classes. The conventional baseline is a sensitive 51N element (30 A, 10-cycle delay) <i>with</i> 2nd-harmonic inrush restraint, as real feeder relays use.</p>
+
+<figure><img src="../feasibility/results/fig_waveforms.png" style="width:70%">
+<figcaption><b>Figure 1.</b> Synthetic residual-current signatures. The HIF (orange) shows the asymmetry, shoulders, random amplitude and re-ignition spikes that the fabric features target.</figcaption></figure>
+
+<div class="two">
+  <figure><img src="../feasibility/results/fig_detection_vs_current.png">
+  <figcaption><b>Figure 2.</b> Event-level HIF detection by arc-current band. The 51N baseline is blind below its pickup; ArcSentinel falls to 92% only in the sub-1 A band.</figcaption></figure>
+  <figure><img src="../feasibility/results/fig_confusion.png" style="width:78%">
+  <figcaption><b>Figure 3.</b> Window-level confusion matrix of the <b>int8</b> classifier on held-out data (94.8% window accuracy; the security counter removes residual errors).</figcaption></figure>
+</div>
+
+<table>
+  <tr><th>Result (held-out test set, 840 events, independent seed)</th><th style="width:20%">ArcSentinel (int8)</th><th style="width:22%">51N + inrush restraint</th></tr>
+  <tr><td>HIF events detected (dependability), 120 events, 0.5&ndash;50 A rms arc current</td><td><b>98.3%</b></td><td>2.5%</td></tr>
+  <tr><td>&nbsp;&nbsp;&hellip; sub-1 A arcs (24 events) / 1&ndash;50 A arcs (96 events)</td><td>91.7% / 100%</td><td>0% / 3.1%</td></tr>
+  <tr><td>Look-alike events with no operation (security), 720 events</td><td><b>100% (0 false alarms)</b></td><td>98.6% (10 welder trips)</td></tr>
+  <tr><td>Detection time after HIF onset, median / 95th percentile</td><td>0.28 s / 0.32 s</td><td>n/a</td></tr>
+  <tr><td>Window accuracy float &rarr; int8 (agreement 98.7%)</td><td>95.2% &rarr; 94.8%</td><td>n/a</td></tr>
+  <tr><td>Model size / compute</td><td>1,575 int8 params / 1,520 MAC</td><td>n/a</td></tr>
+</table>
+<div class="callout warn"><b>What this does and does not show.</b> All data are synthetic. The study shows that the proposed features separate HIFs from the look-alike classes, that int8 quantization costs almost no accuracy, and that the model is tiny enough for fabric. It does <i>not</i> yet show field accuracy. Published HIF detectors typically score noticeably lower on field data than in simulation, so these figures are an upper bound. Real-data validation, starting with the public Victorian VCIT fault database [7], is our first development task. Sections 7 and 9 describe how we close that gap: randomized physics models, hardware-in-the-loop replay, public or utility field records where licensing allows, and an alarm-only mode for early deployment.</div>
+
+<h2><span class="n">6</span>Implementation: hardware, IP cores, software, resources</h2>
+<div class="two">
+<div>
+<h3>Hardware (beyond the kit)</h3>
+<table>
+  <tr><th>Item</th><th>Purpose</th></tr>
+  <tr><td>MCP3914B adapter board</td><td>8-ch simultaneous-sampling ADC on the 40-pin header</td></tr>
+  <tr><td>Op-amp front-end (e.g. MCP6022), RC filters</td><td>Scaling and anti-aliasing</td></tr>
+  <tr><td>USB audio interface (&ge;4 outputs) or MCP4728 DAC</td><td>&plusmn;1 V analog fault replay (HIL)</td></tr>
+  <tr><td>12 V AC transformer + small CT + resistive loads</td><td>Safe live-signal demo (no mains)</td></tr>
+  <tr><td>2 Ethernet switches + PC with 2 NICs</td><td>PRP LAN A/B, GOOSE subscriber, Wireshark</td></tr>
+  <tr><td>Opto-isolated relay module</td><td>Trip output</td></tr>
+</table>
+<p class="small">Estimated extra cost under US$120. All testing is at safe low voltage.</p>
+</div>
+<div>
+<h3>Microchip IP &amp; tools</h3>
+<table>
+  <tr><th>Block</th><th>Source</th></tr>
+  <tr><td>MSS, PF_CCC, PF_TVS, CoreGPIO, MIV_IHC</td><td>Libero SoC catalog</td></tr>
+  <tr><td>CoreFFT (512-pt, streaming)</td><td>Libero SoC catalog</td></tr>
+  <tr><td>CoreAXI4Interconnect, CoreAXI4DMAController</td><td>Libero SoC catalog</td></tr>
+  <tr><td>feature_engine, window_stats, mlp_int8</td><td>SmartHLS (C++) &mdash; ours</td></tr>
+  <tr><td>adc_seq, replay_inj, ocp_50_51, trip_logic</td><td>Verilog RTL &mdash; ours</td></tr>
+  <tr><td>HSS, OpenSBI, U-Boot, Yocto/Buildroot AMP</td><td>Microchip PolarFire SoC BSP</td></tr>
+  <tr><td>MPFS HAL bare-metal, RPMsg (OpenAMP)</td><td>Microchip SoftConsole</td></tr>
+  <tr><td>libiec61850, linuxptp, Linux HSR/PRP</td><td>Open source (licences in &sect;11)</td></tr>
+</table>
+</div>
+</div>
+
+<h3>Fabric resource estimate (pre-synthesis, MPFS250T)</h3>
+<table>
+  <tr><th>Block</th><th>Logic elements</th><th>Math blocks</th><th>LSRAM</th><th>Notes</th></tr>
+  <tr><td>ADC sequencer + calibration + residual</td><td>~2 K</td><td>2</td><td>0</td><td>SPI, CRC, sample counter</td></tr>
+  <tr><td>CoreFFT 512-pt, time-multiplexed over 8 ch</td><td>~7 K</td><td>~12</td><td>~8</td><td>8 FFTs per 20 ms is &lt;1% duty</td></tr>
+  <tr><td>Feature engine + window stats (SmartHLS)</td><td>~10 K</td><td>~14</td><td>~6</td><td>magnitudes via CORDIC / sqrt</td></tr>
+  <tr><td>int8 MLP, 16 parallel MACs (SmartHLS)</td><td>~5 K</td><td>16</td><td>2</td><td>weights in LSRAM, reloadable</td></tr>
+  <tr><td>50/51/N protection + trip logic</td><td>~2 K</td><td>4</td><td>0</td><td>sample-based, &lt;1 ms</td></tr>
+  <tr><td>Replay injector + recorder DMA + AXI/FIC glue</td><td>~12 K</td><td>0</td><td>~4</td><td>CoreAXI4DMAController</td></tr>
+  <tr><td><b>Total (estimate)</b></td><td><b>~38 K (~15%)</b></td><td><b>~48</b></td><td><b>~20</b></td><td>Large margin for multi-feeder lanes</td></tr>
+</table>
+
+<h2><span class="n">7</span>Verification &amp; performance evaluation plan</h2>
+<ul>
+  <li><b>Golden-model equivalence.</b> Every SmartHLS function has a C++ testbench checked bit-exactly against the Python fixed-point model. The testbenches run in SmartHLS software and co-simulation, and ModelSim testbenches cover the RTL (including an MCP3914B bus-functional model).</li>
+  <li><b>On-board bit-exactness.</b> Replay-injector runs compare on-chip features and scores with the golden model, frame by frame. The same test becomes a built-in self-test.</li>
+  <li><b>Real recorded faults.</b> The golden model, and then the hardware via the replay injector, is run on the Victorian Government&rsquo;s <i>Vegetation Conduction Ignition Test</i> data (CC BY 4.0) [7]. This is a reference database of staged vegetation-contact fault signatures, created to support better fault detection. We report results by current band, alongside the synthetic figures.</li>
+  <li><b>Analog hardware-in-the-loop.</b> Randomized fault libraries are played through the DAC front-end to measure dependability, security and detection time under noise, frequency drift (&plusmn;0.5 Hz) and 50/60 Hz.</li>
+  <li><b>Timing.</b> Fabric cycle-counter timestamps at each pipeline stage, and an oscilloscope on the trip output against a replay marker pin. Wireshark with hardware timestamps on both PRP LANs.</li>
+  <li><b>Fault injection (mixed criticality).</b> We crash Linux (<code>sysrq-trigger</code>) during a replayed fault and show the trip still happens. We unplug LAN A during a trip and show the GOOSE still arrives on LAN B.</li>
+  <li><b>Soak test.</b> A 72-hour run on normal and confuser replay to bound the false-alarm rate.</li>
+  <li><b>Fabric vs software.</b> The same C++ runs on the U54 cores under Linux and bare metal. We report latency, jitter, CPU load and energy per cycle from the PAC1934.</li>
+</ul>
+<table>
+  <tr><th>Metric</th><th>Target</th><th>Measured how</th></tr>
+  <tr><td>HIF dependability / security (replay + HIL)</td><td>&ge; 95% / &ge; 99.5%, 0 on confuser set</td><td>Randomized held-out libraries</td></tr>
+  <tr><td>Dependability on real recorded faults (VCIT)</td><td>Report by current band</td><td>Replay of public field-test data</td></tr>
+  <tr><td>HIF detection time after onset</td><td>median &le; 0.5 s</td><td>Fabric timestamps</td></tr>
+  <tr><td>Instantaneous overcurrent: sample &rarr; trip output</td><td>&lt; 1 ms</td><td>Oscilloscope</td></tr>
+  <tr><td>Per-cycle features + inference latency / jitter</td><td>&lt; 50 &micro;s / &lt; 1 &micro;s</td><td>Fabric cycle counters</td></tr>
+  <tr><td>Decision &rarr; GOOSE on wire (both LANs)</td><td>&lt; 4 ms</td><td>HW-timestamped capture</td></tr>
+  <tr><td>Trip messages lost with one LAN failed</td><td>0</td><td>PRP link-cut test</td></tr>
+  <tr><td>Fabric vs U54 software: speed-up, p99.9 jitter, energy</td><td>Report (expected &gt;10&times; lower jitter)</td><td>Same C++ source</td></tr>
+  <tr><td>Fabric utilisation</td><td>&lt; 25% LE</td><td>Libero reports</td></tr>
+</table>
+
+<h2><span class="n">8</span>Development plan (Nov 30, 2026 &ndash; Mar 27, 2027)</h2>
+<p class="small">Pre-kit work (Oct&ndash;Nov) needs no hardware: golden-model validation on the VCIT real fault data, SmartHLS C++ models and co-simulation, RTL simulation, the Yocto AMP build.</p>
+<table class="gantt">
+  <tr><th class="lbl">Work package (owner)</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th><th>17</th></tr>
+  <tr><td class="lbl">Kit bring-up: reference design, AMP Linux + bare-metal, PAC1934 (B)</td><td class="g2"></td><td class="g2"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">ADC sequencer, replay injector, recorder DMA (A)</td><td></td><td class="g1"></td><td class="g1"></td><td class="g1"></td><td class="g1"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">Feature engine + CoreFFT, bit-exact vs golden (A, C)</td><td></td><td></td><td></td><td class="g1"></td><td class="g1"></td><td class="g1"></td><td class="g1"></td><td class="g1"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">50/51N protection + trip logic (A)</td><td></td><td></td><td></td><td></td><td></td><td class="g1"></td><td class="g1"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">Dataset v2, training, int8 MLP in SmartHLS (C, A)</td><td class="g4"></td><td class="g4"></td><td class="g4"></td><td></td><td></td><td></td><td class="g4"></td><td class="g4"></td><td class="g4"></td><td class="g4"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">Bare-metal decision logic + RPMsg (B)</td><td></td><td></td><td class="g2"></td><td class="g2"></td><td></td><td></td><td></td><td class="g2"></td><td class="g2"></td><td class="g2"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl"><b>MVP: replay &rarr; features &rarr; int8 &rarr; HIF trip, end-to-end</b></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="gm">&#9670;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">Linux: GOOSE/MMS, PRP, PTP, COMTRADE, web HMI (B)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="g3"></td><td class="g3"></td><td class="g3"></td><td class="g3"></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">Analog HIL, test campaign, SW baseline, power (C)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="g4"></td><td class="g4"></td><td class="g4"></td><td></td><td></td><td></td></tr>
+  <tr><td class="lbl">Optimization, robustness, 60 Hz, multi-feeder lane (A, B)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="g1"></td><td class="g1"></td><td class="g1"></td><td></td></tr>
+  <tr><td class="lbl">Documentation, README, demo video (all)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="g0"></td><td class="g0"></td><td class="g0"></td></tr>
+  <tr><td class="lbl"><b>Final submission (buffer week 17)</b></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="gm">&#9670;</td></tr>
+</table>
+<p class="small"><b>Roles:</b> <b>A</b>, FPGA fabric (RTL, SmartHLS, CoreFFT, Libero integration and timing). <b>B</b>, embedded software (AMP, bare-metal decision logic, Linux, IEC 61850, PRP/PTP). <b>C</b>, algorithms and validation (dataset, training and quantization, HIL, test campaign, documentation). Our team has two members (Hemanth Chilakala, Tanmaya Kumar), so C&rsquo;s tasks are shared between A and B. Weekly integration builds; each work package ends with a test that must pass. <b>The MVP milestone in week 10 guarantees a working demo even if stretch goals slip.</b></p>
+
+<h2><span class="n">9</span>Technical risks &amp; mitigations</h2>
+<table>
+  <tr><th style="width:27%">Risk</th><th style="width:10%">Likelihood</th><th>Mitigation</th></tr>
+  <tr><td>Limited real HIF field data</td><td>High</td><td>Validate on the public VCIT field-test database [7] before hardware arrives; physics-based randomized arc models covering wide parameter ranges; add utility field records where licensing permits; conservative security counter; alarm-only mode for first deployments.</td></tr>
+  <tr><td>SmartHLS feature engine misses timing or grows too large</td><td>Medium</td><td>Throughput needed is tiny (8 FFTs per 20 ms), so we can pipeline less and clock lower. Fallback: CoreFFT with RTL glue, and the MLP moves to U54 #4 (1,520 MAC in &lt;10 &micro;s), keeping determinism.</td></tr>
+  <tr><td>MCP3914B adapter delays</td><td>Medium</td><td>Replay injector allows full-pipeline development without the ADC. Alternative SPI ADC via mikroBUS as backup.</td></tr>
+  <tr><td>AMP / RPMsg integration issues</td><td>Low&ndash;Med</td><td>Start from Microchip&rsquo;s supported Icicle AMP machine (<code>mpfs-icicle-kit-amp</code>) and its RPMsg demos; bring-up in weeks 1&ndash;2.</td></tr>
+  <tr><td>Bare-metal hart lacks fabric trip I/O by default</td><td>Medium</td><td>In Microchip&rsquo;s default AMP configuration, context B owns only MMUART3. We extend the HSS payload and PMP configuration so hart 4 owns the FIC address window of the score and trip registers, and verify that Linux cannot reach it.</td></tr>
+  <tr><td>Overlap with prior art / patents</td><td>Low&ndash;Med</td><td>Detection method deliberately differs from the patented band-energy-image + CNN approach [6]; the claimed novelty is the safety architecture; freedom-to-operate review before any commercial use.</td></tr>
+  <tr><td>PRP / PTP configuration on the GEMs</td><td>Low&ndash;Med</td><td>Mainline Linux HSR/PRP driver; Microchip&rsquo;s documented Linux PTP on GEM. Fallback: duplicate-send GOOSE on both ports from the application.</td></tr>
+  <tr><td>Classifier over-fits synthetic data</td><td>Medium</td><td>Held-out generators with independent seeds; parameter-range extrapolation tests; features chosen for physical meaning (explainable), not raw samples.</td></tr>
+  <tr><td>Safety during testing</td><td>&mdash;</td><td>No mains-voltage experiments. All signals are &le; 12 V AC or &plusmn;1 V DAC outputs.</td></tr>
+</table>
+
+<h2><span class="n">10</span>Impact, scalability and adoption</h2>
+<ul>
+  <li><b>Who benefits.</b> Distribution utilities and rural electric co-operatives in wildfire-prone regions; operators of densely populated networks where fallen live conductors cause electrocutions; microgrids, solar farms and mines.</li>
+  <li><b>Adoption path.</b> Alarm-only pilot beside existing relays via standard CT/VT test switches, then trip mode once confidence is established. IEC 61850 GOOSE/MMS lets it drop into modern substations with no custom wiring.</li>
+  <li><b>Commercial routes.</b> (a) A low-cost retrofit HIF module. (b) Licensable detection IP for relay and recloser OEMs. (c) A pole-top sensor variant on a smaller PolarFire SoC.</li>
+  <li><b>Scaling up and out.</b> Replicate lanes for multi-feeder substation units. Add detectors for broken conductors, incipient cable faults and vegetation contact as new fabric functions or signed model updates.</li>
+  <li><b>Research and education.</b> We will publish the golden model, an open HIF waveform dataset and a benchmark so others can reproduce and improve results.</li>
+</ul>
+
+<h2><span class="n">11</span>Third-party IP, open source and AI-tool disclosure</h2>
+<p class="small"><b>Microchip IP:</b> Libero SoC catalog cores (MSS, PF_CCC, PF_TVS, CoreFFT, CoreAXI4Interconnect, CoreAXI4DMAController, CoreGPIO, MIV_IHC), HSS and the PolarFire SoC BSP, used under Microchip licence terms. <b>Open source:</b> Linux kernel (GPL-2.0), OpenSBI (BSD-2), U-Boot (GPL-2.0), linuxptp (GPL-2.0), libiec61850 (GPL-3.0; the application will comply or use a commercial licence), OpenAMP (BSD-3), NumPy and Matplotlib (BSD). <b>AI tools:</b> Claude (Anthropic) assisted in drafting proposal text, diagram layout and scaffolding of the Python feasibility model. All technical content was reviewed by the team, the model was run and its results checked by the team, and the team owns and fully understands the design.</p>
+
+<h2><span class="n">12</span>References</h2>
+<ol class="ref">
+  <li>A. E. Emanuel, D. Cyganski, J. A. Orr, S. Shiller, E. M. Gulachenski, &ldquo;High impedance fault arcing on sandy soil in 15 kV distribution feeders: contributions to the evaluation of the low frequency spectrum,&rdquo; <i>IEEE Trans. Power Delivery</i>, vol. 5, no. 2, pp. 676&ndash;686, 1990.</li>
+  <li>IEEE PES Power System Relaying Committee, Working Group D15, &ldquo;High Impedance Fault Detection Technology,&rdquo; report, 1996.</li>
+  <li>IEC 61850-8-1 (GOOSE/MMS); IEC 62439-3 (PRP/HSR); IEEE C37.111 (COMTRADE); IEEE 1588 (PTP).</li>
+  <li>CAL FIRE, &ldquo;CAL FIRE Investigators Determine Cause of the Camp Fire,&rdquo; news release, May 2019.</li>
+  <li>Microchip &amp; open-source resources: github.com/polarfire-soc/polarfire-soc-documentation (AMP, RPMsg, Linux PTP on GEM); github.com/polarfire-soc/icicle-kit-reference-design; github.com/MicrochipTech/fpga-hls-examples (SmartHLS); github.com/mz-automation/libiec61850.</li>
+  <li>S. Tharmakulasingam, S. Lu, B. T. Phung, E. Ambikairajah (NewSouth Innovations), &ldquo;Apparatus and process for real-time detection of high-impedance faults in power lines,&rdquo; US Patent 12,032,037 B2, granted Jul. 9, 2024.</li>
+  <li>Victorian Government (DEECA), Powerline Bushfire Safety Program, &ldquo;Vegetation Conduction Ignition Test Report and Data,&rdquo; data.vic.gov.au, CC BY 4.0.</li>
+</ol>
+
+</body>
+</html>

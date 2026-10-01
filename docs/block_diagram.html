@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ArcSentinel - System Block Diagram</title>
+<style>
+  @page { size: 11in 8.5in; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; }
+  body { font-family: "Segoe UI", "Inter", Arial, sans-serif; color: #1b2330;
+         -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { position: relative; width: 1600px; height: 1236px; zoom: 0.66; overflow: hidden;
+          page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+
+  /* header */
+  .hdr { position: absolute; left: 30px; top: 18px; right: 30px; height: 92px;
+         border-bottom: 3px solid #1b2330; }
+  .hdr h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; }
+  .hdr h1 span { color: #d9480f; }
+  .hdr .sub { font-size: 17px; color: #495057; margin-top: 2px; }
+  .hdr .tag { position: absolute; right: 0; top: 4px; text-align: right; font-size: 15px; color: #495057; }
+  .hdr .tag b { display: inline-block; background: #1b2330; color: #fff; padding: 4px 12px;
+                border-radius: 4px; font-size: 16px; margin-bottom: 4px; }
+
+  /* regions */
+  .region { position: absolute; border-radius: 10px; }
+  .region > .rl { position: absolute; left: 14px; top: 8px; font-size: 13.5px; white-space: nowrap; font-weight: 700;
+                  letter-spacing: 1.2px; text-transform: uppercase; }
+  .fabric { background: #fff9f2; border: 2.5px solid #e8590c; }
+  .fabric > .rl { color: #c2410c; }
+  .mss { background: #f6f9fc; border: 2.5px solid #364fc7; }
+  .mss > .rl { color: #364fc7; }
+  .colhead { position: absolute; font-size: 15px; font-weight: 700; letter-spacing: 1.2px;
+             text-transform: uppercase; color: #495057; }
+
+  /* boxes */
+  .box { position: absolute; border-radius: 7px; padding: 8px 11px; background: #fff;
+         border: 1.8px solid #868e96; font-size: 14px; line-height: 1.28; }
+  .box h4 { font-size: 15.5px; font-weight: 700; margin-bottom: 3px; }
+  .box p { color: #343a40; }
+  .box .ip { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 1px 6px; border-radius: 3px;
+             background: #1b2330; color: #fff; margin-right: 4px; vertical-align: 1px; }
+  .ext  { background: #f1f3f5; border-color: #868e96; }
+  .hw   { background: #fff4e6; border-color: #e8590c; }
+  .hls  { background: #fff4e6; border-color: #e8590c; border-width: 2.2px; }
+  .bm   { background: #e6fcf5; border-color: #0ca678; }
+  .lnx  { background: #e7f5ff; border-color: #1c7ed6; }
+  .mon  { background: #f3f0ff; border-color: #7048e8; }
+  .trip { background: #fff5f5; border-color: #e03131; border-width: 2.4px; }
+  .fs   { position: absolute; left: 12px; right: 12px; border-radius: 6px; background: #fff;
+          border: 1.4px dashed #e8590c; padding: 6px 9px; font-size: 13.5px; line-height: 1.25; }
+  .fs b { color: #c2410c; }
+  ul.l { margin: 3px 0 0 16px; }
+  ul.l li { margin: 1px 0; }
+
+  .bar { position: absolute; background: #1b2330; color: #fff; border-radius: 6px; font-size: 14px;
+         font-weight: 600; display: flex; align-items: center; justify-content: center; letter-spacing: .3px; }
+
+  svg.wires { position: absolute; left: 0; top: 0; width: 1600px; height: 1236px; pointer-events: none; }
+  .wl { font-size: 12.5px; fill: #495057; font-family: "Segoe UI", Arial, sans-serif; }
+  .wl.r { fill: #c92a2a; font-weight: 700; }
+
+  /* bottom panels */
+  .panel { position: absolute; border: 1.5px solid #ced4da; border-radius: 8px; padding: 10px 14px;
+           font-size: 13.5px; line-height: 1.35; background: #fff; }
+  .panel h5 { font-size: 13.5px; text-transform: uppercase; letter-spacing: 1px; color: #495057; margin-bottom: 6px; }
+  .lg { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .lg span { display: inline-flex; align-items: center; gap: 7px; }
+  .sw { width: 22px; height: 14px; border-radius: 3px; border: 2px solid; display: inline-block; }
+  table.lat { border-collapse: collapse; width: 100%; font-size: 13px; }
+  table.lat td { padding: 2.5px 4px; border-bottom: 1px solid #edf0f2; }
+  table.lat td:last-child { text-align: right; font-weight: 700; white-space: nowrap; }
+  .kpi { display: flex; gap: 10px; }
+  .kpi div { flex: 1; text-align: center; background: #fff4e6; border-radius: 6px; padding: 6px 4px; }
+  .kpi b { display: block; font-size: 25px; color: #d9480f; line-height: 1.1; }
+  .kpi small { font-size: 11.5px; color: #495057; display: block; line-height: 1.2; }
+  .foot { position: absolute; left: 30px; right: 30px; bottom: 12px; font-size: 12px; color: #868e96;
+          display: flex; justify-content: space-between; }
+
+  /* page 2 */
+  .stage { position: absolute; top: 200px; width: 176px; height: 250px; border-radius: 8px; padding: 10px;
+           font-size: 13.5px; line-height: 1.3; border: 2px solid #e8590c; background: #fff4e6; }
+  .stage h4 { font-size: 15px; margin-bottom: 4px; }
+  .stage .t { position: absolute; left: 10px; right: 10px; bottom: 10px; border-top: 1px solid #f0c8a8;
+              padding-top: 6px; font-weight: 700; color: #c2410c; font-size: 13px; }
+  .layer { position: absolute; left: 30px; width: 740px; border-radius: 8px; padding: 12px 16px;
+           font-size: 14px; line-height: 1.35; border: 2px solid; }
+  .layer h4 { font-size: 16px; margin-bottom: 4px; }
+  table.part { position: absolute; left: 800px; top: 560px; width: 770px; border-collapse: collapse; font-size: 13.5px; }
+  table.part th { text-align: left; background: #1b2330; color: #fff; padding: 7px 8px; font-size: 13px; }
+  table.part td { padding: 6px 8px; border-bottom: 1px solid #dee2e6; vertical-align: top; line-height: 1.3; }
+  table.part tr:nth-child(even) td { background: #f8f9fa; }
+  .h2 { position: absolute; font-size: 19px; font-weight: 700; }
+  .h2 small { font-weight: 400; color: #6c757d; font-size: 14px; margin-left: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ============================ PAGE 1 ============================ -->
+<div class="page">
+  <div class="hdr">
+    <h1>Arc<span>Sentinel</span> &mdash; System Block Diagram</h1>
+    <div class="sub">FPGA-accelerated detection &amp; protection against high-impedance (downed / arcing conductor) faults</div>
+    <div class="tag"><b>Track 2 &middot; PolarFire&reg; SoC Icicle Kit (MPFS250T)</b><br>Team ArcSentinel: Hemanth Chilakala (lead), Tanmaya Kumar &middot; v1.1 &middot; Oct 2026</div>
+  </div>
+
+  <!-- left column -->
+  <div class="colhead" style="left:30px; top:128px;">Field &amp; test inputs</div>
+  <div class="box ext" style="left:30px; top:160px; width:270px; height:100px;">
+    <h4>Feeder CT / VT secondaries</h4>
+    <p>3 voltages + 3 phase currents + neutral current, scaled to safe low-voltage signals</p>
+  </div>
+  <div class="box ext" style="left:30px; top:290px; width:270px; height:100px;">
+    <h4>Signal conditioning</h4>
+    <p>Burden resistors, anti-alias RC filters, galvanic isolation</p>
+  </div>
+  <div class="box hw" style="left:30px; top:420px; width:270px; height:130px;">
+    <h4>Microchip MCP3914B ADC</h4>
+    <p>8-channel, 24-bit, simultaneous-sampling &Delta;&Sigma; ADC &middot; 25.6 kS/s/ch (512 samples/cycle @ 50 Hz)</p>
+  </div>
+  <div class="box trip" style="left:30px; top:610px; width:270px; height:100px;">
+    <h4 style="color:#c92a2a">Breaker / recloser trip output</h4>
+    <p>Opto-isolated relay contact + alarm LEDs on Icicle Kit</p>
+  </div>
+  <div class="box ext" style="left:30px; top:760px; width:270px; height:90px;">
+    <h4>Low-voltage analog replay</h4>
+    <p>PC DAC / USB audio, &plusmn;1 V (no mains voltage used)</p>
+  </div>
+  <div class="box ext" style="left:30px; top:880px; width:270px; height:120px;">
+    <h4>HIL grid emulator (PC)</h4>
+    <p>Physics-based fault models (Emanuel arc) + COMTRADE library; also uploads files for bit-exact digital replay</p>
+  </div>
+
+  <!-- FPGA fabric -->
+  <div class="region fabric" style="left:340px; top:130px; width:700px; height:840px;">
+    <div class="rl">PolarFire SoC FPGA fabric &middot; hard real-time, no software in the sample path</div>
+  </div>
+  <div class="box hw" style="left:365px; top:180px; width:250px; height:130px;">
+    <h4>ADC sequencer <span class="ip">RTL</span></h4>
+    <p>SPI master, lock-step 8-ch capture, PTP-disciplined sample clock (<b>PF_CCC</b>), CRC &amp; missing-sample check</p>
+  </div>
+  <div class="box hw" style="left:365px; top:335px; width:250px; height:125px;">
+    <h4>Replay injector <span class="ip">RTL</span></h4>
+    <p>Streams recorded / simulated waveforms from LPDDR4 in place of the ADC &rarr; bit-exact self-test &amp; regression</p>
+  </div>
+  <div class="box hw" style="left:640px; top:255px; width:100px; height:135px; text-align:center; padding:8px 5px;">
+    <h4>Source MUX</h4>
+    <p style="font-size:13px">+ gain / offset calibration</p>
+  </div>
+
+  <div class="box hls" style="left:770px; top:170px; width:250px; height:430px; padding-top:7px;">
+    <h4>Feature engine <span class="ip">SmartHLS</span></h4>
+    <p style="font-size:12.5px;color:#6c757d">per phase &amp; residual, every power cycle</p>
+    <div class="fs" style="top:58px; height:70px;"><b>CoreFFT 512-pt</b> &rarr; harmonics h1&ndash;h25, interharmonic energy</div>
+    <div class="fs" style="top:136px; height:62px;"><b>Haar DWT</b> D1 / D2 &rarr; high-frequency arc energy</div>
+    <div class="fs" style="top:206px; height:62px;"><b>Asymmetry</b> + cycle-to-cycle randomness</div>
+    <div class="fs" style="top:276px; height:62px;"><b>3rd-harmonic angle</b> vs voltage; 2nd-harmonic ratio</div>
+    <div class="fs" style="top:346px; height:70px;"><b>Window stats</b>: mean / &sigma; over 10 cycles, updated every 2 cycles</div>
+  </div>
+  <div class="box hls" style="left:770px; top:625px; width:250px; height:120px;">
+    <h4>int8 classifier <span class="ip">SmartHLS</span></h4>
+    <p>MLP 28&rarr;32&rarr;16&rarr;7 &middot; 1,520 MAC on Math blocks &middot; 7 event classes incl. HIF</p>
+  </div>
+
+  <div class="box hw" style="left:365px; top:490px; width:250px; height:115px;">
+    <h4>Hard-wired protection <span class="ip">RTL</span></h4>
+    <p>50/51 + 50N/51N overcurrent; keeps working even if all software stops</p>
+  </div>
+  <div class="box trip" style="left:440px; top:640px; width:175px; height:80px; text-align:center;">
+    <h4 style="color:#c92a2a">Trip logic</h4>
+    <p style="font-size:13px">OR + latch + alarm/trip policy</p>
+  </div>
+  <div class="box hw" style="left:365px; top:780px; width:250px; height:95px;">
+    <h4>Waveform recorder <span class="ip">DMA</span></h4>
+    <p>Pre/post-trigger ring buffer &rarr; LPDDR4</p>
+  </div>
+  <div class="box hw" style="left:770px; top:780px; width:250px; height:95px;">
+    <h4>Health monitor</h4>
+    <p><b>PF_TVS</b> temp/voltage, sample-integrity watchdog</p>
+  </div>
+
+  <!-- MSS -->
+  <div class="region mss" style="left:1070px; top:130px; width:500px; height:840px;">
+    <div class="rl">MSS &middot; 5&times; RISC-V, asymmetric multiprocessing</div>
+  </div>
+  <div class="box mon" style="left:1095px; top:175px; width:450px; height:95px;">
+    <h4>E51 monitor core &mdash; HSS</h4>
+    <p>Secure boot, watchdog, ECC memory scrubbing, health monitoring, AMP context launch</p>
+  </div>
+  <div class="box bm" style="left:1095px; top:290px; width:450px; height:140px;">
+    <h4>U54 #4 &mdash; Context B, bare-metal &middot; <i>protection decision</i></h4>
+    <ul class="l">
+      <li>K-of-N security counter, inrush / switching blocking</li>
+      <li>Alarm-or-trip policy per utility, &micro;s event timestamps</li>
+      <li>Deterministic: code &amp; data in L2 scratchpad, no OS jitter</li>
+    </ul>
+  </div>
+  <div class="bar" style="left:1095px; top:440px; width:450px; height:30px; background:#495057;">&#8645; RPMsg / OpenAMP shared memory</div>
+  <div class="box lnx" style="left:1095px; top:480px; width:450px; height:230px;">
+    <h4>U54 #1&ndash;3 &mdash; Context A, embedded Linux &middot; <i>communications</i></h4>
+    <ul class="l">
+      <li><b>IEC 61850</b> GOOSE trip publisher + MMS server (libiec61850)</li>
+      <li><b>PRP</b> (IEC 62439-3) redundancy across eth0 + eth1</li>
+      <li><b>IEEE 1588 PTP</b> (linuxptp) &rarr; synchronised timestamps</li>
+      <li>COMTRADE fault records &rarr; eMMC</li>
+      <li>Web HMI: live phasors, spectra, event log</li>
+      <li>Signed model / bitstream updates</li>
+    </ul>
+  </div>
+  <div class="box ext" style="left:1095px; top:730px; width:215px; height:62px; background:#fff;">
+    <h4>LPDDR4 2 GB</h4><p style="font-size:12.5px">replay &amp; recorder buffers</p>
+  </div>
+  <div class="box ext" style="left:1330px; top:730px; width:215px; height:62px; background:#fff;">
+    <h4>eMMC</h4><p style="font-size:12.5px">rootfs, COMTRADE archive</p>
+  </div>
+  <div class="box ext" style="left:1095px; top:812px; width:215px; height:62px; background:#fff;">
+    <h4>I&sup2;C1 &rarr; PAC1934</h4><p style="font-size:12.5px">per-rail power &rarr; energy/decision</p>
+  </div>
+  <div class="box ext" style="left:1330px; top:812px; width:215px; height:62px; background:#fff;">
+    <h4>GEM0 + GEM1</h4><p style="font-size:12.5px">VSC8662 dual GbE PHY</p>
+  </div>
+
+  <!-- FIC bar spanning fabric <-> MSS -->
+  <div class="bar" style="left:365px; top:905px; width:1180px; height:44px;">
+    FIC0 / FIC1 AXI4 &nbsp;&middot;&nbsp; MIV_IHC inter-hart mailbox &nbsp;&middot;&nbsp; interrupts &nbsp;&middot;&nbsp; CoreGPIO &nbsp;&nbsp; &#8646; &nbsp; fabric &harr; MSS &harr; LPDDR4
+  </div>
+
+  <!-- wires -->
+  <svg class="wires" viewBox="0 0 1600 1236">
+    <defs>
+      <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#343a40"/></marker>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#e03131"/></marker>
+      <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#1c7ed6"/></marker>
+    </defs>
+    <g fill="none" stroke="#343a40" stroke-width="2.2">
+      <path d="M165,260 V288" marker-end="url(#a)"/>
+      <path d="M165,390 V418" marker-end="url(#a)"/>
+      <!-- DAC -> conditioning (left margin) -->
+      <path d="M30,805 H14 V340 H28" marker-end="url(#a)"/>
+      <path d="M165,880 V852" marker-end="url(#a)"/>
+      <!-- ADC -> sequencer -->
+      <path d="M300,485 H322 V245 H363" marker-end="url(#a)"/>
+      <!-- sequencer / replay -> MUX -->
+      <path d="M615,245 H627 V290 H638" marker-end="url(#a)"/>
+      <path d="M615,397 H627 V355 H638" marker-end="url(#a)"/>
+      <!-- MUX -> feature engine -->
+      <path d="M740,322 H768" marker-end="url(#a)"/>
+      <!-- MUX -> protection & recorder -->
+      <path d="M690,390 V827 H617" marker-end="url(#a)"/>
+      <path d="M690,547 H617" marker-end="url(#a)"/>
+      <!-- FE -> classifier -->
+      <path d="M895,600 V623" marker-end="url(#a)"/>
+      <!-- classifier -> bare-metal hart -->
+      <path d="M1020,685 H1052 V360 H1093" marker-end="url(#a)"/>
+      <!-- recorder / health -> bar -->
+      <path d="M490,875 V903" marker-end="url(#a)"/>
+      <path d="M895,875 V903" marker-end="url(#a)"/>
+    </g>
+    <!-- trip path -->
+    <g fill="none" stroke="#e03131" stroke-width="2.8">
+      <path d="M527,605 V638" marker-end="url(#ar)"/>
+      <path d="M440,680 H302" marker-end="url(#ar)"/>
+      <path d="M580,903 V722" stroke-dasharray="7 5" marker-end="url(#ar)"/>
+    </g>
+    <!-- network -->
+    <g fill="none" stroke="#1c7ed6" stroke-width="2.6">
+      <path d="M1545,843 H1588 V1022 H1572" marker-end="url(#ab)"/>
+    </g>
+    <text class="wl" x="316" y="478" transform="rotate(-90 316 478)">SPI + DRDY &middot; 40-pin header</text>
+    <text class="wl" x="684" y="815" transform="rotate(-90 684 815)">sample stream &middot; 8 ch &times; 25.6 kS/s</text>
+    <text class="wl" x="1028" y="705" transform="rotate(-90 1028 705)">scores + features / IRQ</text>
+    <text class="wl r" x="318" y="672">TRIP</text>
+    <text class="wl r" x="573" y="748" text-anchor="end">HIF trip / alarm</text>
+    <text class="wl r" x="573" y="764" text-anchor="end">from U54 #4</text>
+    <text class="wl" x="60" y="1235"></text>
+  </svg>
+
+  <!-- bottom panels -->
+  <div class="panel" style="left:30px; top:1010px; width:500px; height:95px;">
+    <h5>Legend</h5>
+    <div class="lg">
+      <span><i class="sw" style="background:#fff4e6;border-color:#e8590c"></i>Fabric (RTL / SmartHLS)</span>
+      <span><i class="sw" style="background:#e6fcf5;border-color:#0ca678"></i>Bare-metal RISC-V</span>
+      <span><i class="sw" style="background:#e7f5ff;border-color:#1c7ed6"></i>Linux RISC-V</span>
+      <span><i class="sw" style="background:#f3f0ff;border-color:#7048e8"></i>Monitor core</span>
+      <span><i class="sw" style="background:#f1f3f5;border-color:#868e96"></i>External / test</span>
+      <span><i class="sw" style="background:#fff5f5;border-color:#e03131"></i>Trip path</span>
+    </div>
+  </div>
+  <div class="panel" style="left:30px; top:1115px; width:500px; height:95px;">
+    <h5>Toolchain &amp; build</h5>
+    Libero SoC + SmartHLS + SoftConsole &middot; Icicle Kit reference design &middot; Yocto/Buildroot AMP machine (Linux harts 1&ndash;3, bare-metal hart 4) &middot; Python golden model
+  </div>
+  <div class="panel" style="left:550px; top:1010px; width:490px; height:200px;">
+    <h5>Latency budget (targets)</h5>
+    <table class="lat">
+      <tr><td>Instantaneous overcurrent: sample &rarr; trip output (fabric)</td><td>&lt; 1 ms</td></tr>
+      <tr><td>Cycle features + int8 inference (fabric)</td><td>&lt; 50 &micro;s</td></tr>
+      <tr><td>Sampling jitter (clock-derived)</td><td>&lt; 10 ns</td></tr>
+      <tr><td>HIF declared after onset (model: median 0.28 s)</td><td>&le; 0.5 s</td></tr>
+      <tr><td>Decision &rarr; GOOSE frame on both LANs</td><td>&lt; 4 ms</td></tr>
+      <tr><td>Messages lost when one LAN fails (PRP)</td><td>0</td></tr>
+    </table>
+  </div>
+  <div class="panel" style="left:1070px; top:1010px; width:500px; height:95px; border-color:#1c7ed6;">
+    <h5 style="color:#1c7ed6">Station network</h5>
+    PRP LAN A + LAN B &rarr; substation SCADA / HMI and remote breakers &amp; reclosers (GOOSE subscribers)
+  </div>
+  <div class="panel" style="left:1070px; top:1115px; width:500px; height:95px; padding-top:7px;">
+    <div class="kpi">
+      <div><b>98.3%</b><small>HIFs detected, 0.5&ndash;50 A<br>(pre-proposal model)</small></div>
+      <div><b>2.5%</b><small>51N + inrush restraint<br>on same faults</small></div>
+      <div><b>0 / 720</b><small>false alarms on<br>look-alike events</small></div>
+    </div>
+  </div>
+  <div class="foot"><span>ArcSentinel &middot; PolarFire&reg; FPGA Design Contest 2026 &middot; Track 2</span><span>Page 1 / 2 &mdash; System architecture</span></div>
+</div>
+
+<!-- ============================ PAGE 2 ============================ -->
+<div class="page">
+  <div class="hdr">
+    <h1>Arc<span>Sentinel</span> &mdash; Data Path, Mixed-Criticality Partition &amp; Timing</h1>
+    <div class="sub">How each power cycle travels from the ADC to a trip decision, and why each function lives where it does</div>
+    <div class="tag"><b>Track 2 &middot; PolarFire&reg; SoC Icicle Kit (MPFS250T)</b><br>Team ArcSentinel: Hemanth Chilakala (lead), Tanmaya Kumar &middot; v1.1</div>
+  </div>
+
+  <div class="h2" style="left:30px; top:140px;">A. Per-cycle fabric pipeline <small>every 20 ms per channel (50 Hz); everything runs in parallel, no CPU involvement</small></div>
+
+  <div class="stage" style="left:30px;"><h4>1 &middot; Capture</h4>8 channels sampled in lock-step at 25.6 kS/s; clock disciplined to PTP time<div class="t">jitter &lt; 10 ns</div></div>
+  <div class="stage" style="left:226px;"><h4>2 &middot; Condition</h4>Calibration, residual current Ia+Ib+Ic, source MUX (ADC or replay)<div class="t">1 sample of latency</div></div>
+  <div class="stage" style="left:422px;"><h4>3 &middot; Spectrum</h4>CoreFFT 512-pt per cycle per channel &rarr; h1&ndash;h25 + interharmonic energy<div class="t">~6 &micro;s / FFT @ 100 MHz*</div></div>
+  <div class="stage" style="left:618px;"><h4>4 &middot; Arc features</h4>Haar DWT HF energy, half-cycle asymmetry, cycle-to-cycle randomness, h3 angle<div class="t">streaming, 0 extra passes</div></div>
+  <div class="stage" style="left:814px;"><h4>5 &middot; Window stats</h4>Mean / &sigma; of 14 features over a 10-cycle window, hop 2 cycles &rarr; 28 inputs<div class="t">&lt; 1 &micro;s</div></div>
+  <div class="stage" style="left:1010px;"><h4>6 &middot; Classify</h4>int8 MLP 28-32-16-7, 1,520 MAC, weights in LSRAM, 16 parallel MACs<div class="t">~1 &micro;s*</div></div>
+  <div class="stage" style="left:1206px; border-color:#0ca678; background:#e6fcf5;"><h4>7 &middot; Decide</h4>Bare-metal hart: 5 consecutive HIF windows &rarr; alarm / trip; inrush blocking<div class="t" style="color:#087f5b;border-color:#b2f2dd">median 0.28 s after onset</div></div>
+  <div class="stage" style="left:1402px; border-color:#1c7ed6; background:#e7f5ff; width:168px;"><h4>8 &middot; Report</h4>GOOSE over PRP, COMTRADE record, HMI, PTP timestamp<div class="t" style="color:#1864ab;border-color:#c5dcf5">&lt; 4 ms to wire</div></div>
+  <svg class="wires" viewBox="0 0 1600 1236">
+    <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#343a40"/></marker></defs>
+    <g stroke="#343a40" stroke-width="2.4" fill="none">
+      <path d="M207,325 H224" marker-end="url(#a2)"/><path d="M403,325 H420" marker-end="url(#a2)"/>
+      <path d="M599,325 H616" marker-end="url(#a2)"/><path d="M795,325 H812" marker-end="url(#a2)"/>
+      <path d="M991,325 H1008" marker-end="url(#a2)"/><path d="M1187,325 H1204" marker-end="url(#a2)"/>
+      <path d="M1383,325 H1400" marker-end="url(#a2)"/>
+    </g>
+    <g stroke="#e03131" stroke-width="2.6" fill="none" stroke-dasharray="7 5">
+      <path d="M314,452 V492 H1386" marker-end="url(#a2)"/>
+    </g>
+    <text class="wl r" x="430" y="514">Parallel hard-wired 50/51N path in fabric: sample &rarr; trip output &lt; 1 ms, independent of all software</text>
+  </svg>
+
+  <div class="box trip" style="left:1390px; top:470px; width:180px; height:46px; text-align:center; padding:10px 6px;"><h4 style="color:#c92a2a">TRIP output</h4></div>
+  <div class="h2" style="left:30px; top:555px;">B. Three independent layers of protection <small>our core novelty vs prior HIF devices</small></div>
+  <div class="layer" style="top:600px; height:128px; background:#fff4e6; border-color:#e8590c;">
+    <h4>Layer 1 &mdash; FPGA fabric (safety-critical, hard real-time)</h4>
+    Sampling, feature extraction, int8 inference and classic overcurrent protection run as dedicated logic. No shared caches, interrupts or scheduler, so latency is identical every cycle. If every processor halts, overcurrent protection still trips the breaker.
+  </div>
+  <div class="layer" style="top:740px; height:128px; background:#e6fcf5; border-color:#0ca678;">
+    <h4>Layer 2 &mdash; Bare-metal U54 hart (deterministic decision)</h4>
+    Applies security logic to the fabric&rsquo;s per-window scores: persistence counters, inrush and switching blocking, alarm-versus-trip policy. Runs from L2 scratchpad with no OS, isolated from Linux by PMP and AMP context separation.
+  </div>
+  <div class="layer" style="top:880px; height:128px; background:#e7f5ff; border-color:#1c7ed6;">
+    <h4>Layer 3 &mdash; Linux on 3 U54 harts (communications, non-critical)</h4>
+    IEC 61850 GOOSE/MMS, PRP redundancy on both GbE ports, PTP, COMTRADE, web HMI and signed updates. A Linux crash or network attack cannot block a trip; the E51 monitor restarts the context.
+  </div>
+
+  <div class="h2" style="left:800px; top:555px;">C. Hardware / software partition</div>
+  <table class="part" style="top:600px;">
+    <tr><th style="width:26%">Function</th><th style="width:22%">Where</th><th>Why there</th></tr>
+    <tr><td>ADC capture &amp; timing</td><td>Fabric RTL</td><td>Lock-step sampling with zero jitter; no missed samples</td></tr>
+    <tr><td>FFT, wavelet, randomness features</td><td>Fabric (CoreFFT + SmartHLS)</td><td>Every channel analysed every cycle, in parallel, at fixed latency</td></tr>
+    <tr><td>int8 classifier</td><td>Fabric (SmartHLS)</td><td>Deterministic inference on Math blocks; same C++ runs on CPU for baseline</td></tr>
+    <tr><td>50/51/N overcurrent</td><td>Fabric RTL</td><td>Safety function that must not depend on software</td></tr>
+    <tr><td>Security &amp; trip policy</td><td>Bare-metal U54 #4</td><td>Flexible logic with deterministic timing</td></tr>
+    <tr><td>GOOSE / MMS / PRP / PTP / HMI</td><td>Linux U54 #1&ndash;3</td><td>Rich protocol stacks; not in the critical path</td></tr>
+    <tr><td>Boot, watchdog, ECC scrub</td><td>E51 (HSS)</td><td>Supervises and recovers the other contexts</td></tr>
+  </table>
+  <div style="position:absolute; left:30px; top:1030px; width:1540px; font-size:13px; color:#6c757d; line-height:1.4;">
+    * Pre-synthesis estimates, to be confirmed by Libero timing reports in development week 4. Detection figures come from our pre-proposal Python golden model on <b>synthetic</b> data
+    (2,520 events: 1,680 train / 840 held-out test, independent random seeds). Real-data validation (public Victorian VCIT field-test data) and hardware-in-the-loop replay are part of the development plan.
+    The pipeline is written for 50 Hz and switches to 60 Hz with one parameter change (512 samples/cycle kept by retiming the sample clock).
+  </div>
+  <div class="foot"><span>ArcSentinel &middot; PolarFire&reg; FPGA Design Contest 2026 &middot; Track 2</span><span>Page 2 / 2 &mdash; Data path &amp; partition</span></div>
+</div>
+
+</body>
+</html>

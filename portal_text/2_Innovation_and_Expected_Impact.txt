@@ -1,0 +1,11 @@
+Prior art and differentiation: HIF detection already exists in premium relays (SEL Arc Sense, GE Hi-Z) and in a patented UNSW edge device that frames signals on an FPGA and classifies them with a CNN on a processor. ArcSentinel's novelty is not detection itself, but making it safe, deterministic and deployable:
+
+1. Mixed-criticality protection on one chip. Hard-wired fabric overcurrent (no software in the loop), a bare-metal RISC-V decision hart and Linux communications are isolated on one PolarFire SoC, so a Linux crash or network attack cannot block a trip. We found no HIF device that separates these layers.
+
+2. The whole detection chain in fabric. Harmonic, wavelet, asymmetry and randomness features plus an int8 classifier run at fixed latency with zero jitter, using interpretable physical features rather than a black-box CNN. SmartHLS code is plain C++, so the same algorithm runs on the U54 cores for a measured fabric-versus-software comparison.
+
+3. Dual-Ethernet PRP: trip messages survive a network failure with zero recovery time.
+
+4. Digital-twin replay: the fabric injects recorded faults in place of the ADC for bit-exact in-field self-test.
+
+Impact: an open, explainable, low-cost retrofit that sits beside existing relays on standard CT/VT signals and alarms or trips per utility policy. Preventing one wildfire or electrocution justifies deployment. It scales up to multi-feeder substations and down to low-cost pole-top units. We will validate on public field-test data and publish an open benchmark for research and education.

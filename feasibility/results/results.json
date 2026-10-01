@@ -1,0 +1,158 @@
+{
+  "hif_events": 120,
+  "nonhif_events": 720,
+  "dependability_by_arc_current": {
+    "0.25-1 A": {
+      "n": 24,
+      "arcsentinel": 0.9166666666666666,
+      "baseline51N": 0.0
+    },
+    "1-2 A": {
+      "n": 13,
+      "arcsentinel": 1.0,
+      "baseline51N": 0.0
+    },
+    "2-5 A": {
+      "n": 27,
+      "arcsentinel": 1.0,
+      "baseline51N": 0.0
+    },
+    "5-10 A": {
+      "n": 16,
+      "arcsentinel": 1.0,
+      "baseline51N": 0.0
+    },
+    "10-20 A": {
+      "n": 19,
+      "arcsentinel": 1.0,
+      "baseline51N": 0.0
+    },
+    "20-50 A": {
+      "n": 21,
+      "arcsentinel": 1.0,
+      "baseline51N": 0.14285714285714285
+    }
+  },
+  "arcsentinel_dependability": 0.9833333333333333,
+  "arcsentinel_security": 1.0,
+  "baseline51N_dependability": 0.025,
+  "baseline51N_security": 0.9861111111111112,
+  "median_detection_time_s": 0.28,
+  "p95_detection_time_s": 0.32299999999999984,
+  "false_alarms_by_class": {
+    "normal": 0,
+    "load_switch": 0,
+    "cap_switch": 0,
+    "inrush": 0,
+    "nonlinear_load": 0,
+    "welder": 0
+  },
+  "baseline51N_false_trips_by_class": {
+    "normal": 0,
+    "load_switch": 0,
+    "cap_switch": 0,
+    "inrush": 0,
+    "nonlinear_load": 0,
+    "welder": 10
+  },
+  "window_accuracy_float": 0.9520238095238095,
+  "window_accuracy_int8": 0.947797619047619,
+  "int8_vs_float_agreement": 0.986904761904762,
+  "mlp_layers": [
+    28,
+    32,
+    16,
+    7
+  ],
+  "mlp_macs_per_inference": 1520,
+  "mlp_params": 1575,
+  "mlp_weight_bytes_int8": 1575,
+  "fs_hz": 25600.0,
+  "samples_per_cycle": 512,
+  "window_cycles": 10,
+  "hop_cycles": 2,
+  "k_security": 5,
+  "pickup_51N_A": 30.0,
+  "h2_restraint": 0.15,
+  "arc_rms_range_A": [
+    0.5,
+    50.0
+  ],
+  "train_events": 1680,
+  "test_events": 840,
+  "confusion_int8": [
+    [
+      7021,
+      132,
+      10,
+      125,
+      1,
+      140,
+      87
+    ],
+    [
+      116,
+      590,
+      6,
+      0,
+      0,
+      11,
+      0
+    ],
+    [
+      50,
+      12,
+      760,
+      0,
+      0,
+      0,
+      6
+    ],
+    [
+      27,
+      0,
+      0,
+      1680,
+      0,
+      0,
+      0
+    ],
+    [
+      5,
+      0,
+      0,
+      0,
+      1986,
+      0,
+      0
+    ],
+    [
+      74,
+      7,
+      1,
+      0,
+      1,
+      1921,
+      14
+    ],
+    [
+      22,
+      4,
+      18,
+      0,
+      0,
+      8,
+      1965
+    ]
+  ],
+  "classes": [
+    "normal",
+    "load_switch",
+    "cap_switch",
+    "inrush",
+    "nonlinear_load",
+    "welder",
+    "HIF"
+  ],
+  "runtime_s": 55.0
+}

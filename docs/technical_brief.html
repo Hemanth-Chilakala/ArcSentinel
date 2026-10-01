@@ -59,7 +59,7 @@
 <p><b>In one sentence:</b> ArcSentinel turns the Icicle Kit into a three-layer, mixed-criticality protection relay. FPGA fabric analyses every power cycle with FFT, wavelet and int8-neural-network engines to find the faint, erratic signature of a downed live conductor. A bare-metal RISC-V hart makes the trip decision deterministically, and Linux reports it over redundant IEC 61850 networks.</p>
 
 <div class="kpis">
-  <div><b>98.3%</b><small>synthetic HIFs detected<br>(0.5&ndash;50 A, held-out)</small></div>
+  <div><b>98.3%</b><small>synthetic HIFs detected<br>(0.4&ndash;40 A arcs, held-out)</small></div>
   <div><b>2.5%</b><small>51N + inrush restraint<br>on the same faults</small></div>
   <div><b>0 / 720</b><small>ArcSentinel false alarms<br>on look-alike events</small></div>
   <div><b>0.28 s</b><small>median detection<br>time after onset</small></div>
@@ -118,7 +118,7 @@
 </ul>
 
 <h2><span class="n">5</span>Pre-proposal feasibility study</h2>
-<p>Before applying, we built a Python golden model (<code>feasibility/arcsentinel_model.py</code>) that implements the exact feature set, window logic, int8 quantization and security counter planned for hardware. HIFs use the classic Emanuel two-diode arc model [1]. Its breakdown voltages are random and asymmetric, its resistances vary cycle to cycle, and it adds build-up, intermittent extinction and HF bursts at re-ignition. Arc currents are drawn log-uniformly from 0.5 to 50 A rms, so the range reaches down to the sub-ampere currents typical of vegetation contact. HIFs are placed on a simulated 11 kV feeder with noise, &plusmn;0.1 Hz frequency drift and realistic unbalance, and tested against six look-alike classes. The conventional baseline is a sensitive 51N element (30 A, 10-cycle delay) <i>with</i> 2nd-harmonic inrush restraint, as real feeder relays use.</p>
+<p>Before applying, we built a Python golden model (<code>feasibility/arcsentinel_model.py</code>) that implements the exact feature set, window logic, int8 quantization and security counter planned for hardware. HIFs use the classic Emanuel two-diode arc model [1]. Its breakdown voltages are random and asymmetric, its resistances vary cycle to cycle, and it adds build-up, intermittent extinction and HF bursts at re-ignition. Arc-current amplitudes are drawn log-uniformly from 0.5 to 50 A; because the arc conducts for only part of each cycle, the measured arc current in the test set spans 0.4&ndash;40 A rms, reaching down to the sub-ampere currents typical of vegetation contact. HIFs are placed on a simulated 11 kV feeder with noise, &plusmn;0.1 Hz frequency drift and realistic unbalance, and tested against six look-alike classes. The conventional baseline is a sensitive 51N element (30 A, 10-cycle delay) <i>with</i> 2nd-harmonic inrush restraint, as real feeder relays use.</p>
 
 <figure><img src="../feasibility/results/fig_waveforms.png" style="width:70%">
 <figcaption><b>Figure 1.</b> Synthetic residual-current signatures. The HIF (orange) shows the asymmetry, shoulders, random amplitude and re-ignition spikes that the fabric features target.</figcaption></figure>
@@ -132,7 +132,7 @@
 
 <table>
   <tr><th>Result (held-out test set, 840 events, independent seed)</th><th style="width:20%">ArcSentinel (int8)</th><th style="width:22%">51N + inrush restraint</th></tr>
-  <tr><td>HIF events detected (dependability), 120 events, 0.5&ndash;50 A rms arc current</td><td><b>98.3%</b></td><td>2.5%</td></tr>
+  <tr><td>HIF events detected (dependability), 120 events, 0.4&ndash;40 A rms measured arc current</td><td><b>98.3%</b></td><td>2.5%</td></tr>
   <tr><td>&nbsp;&nbsp;&hellip; sub-1 A arcs (24 events) / 1&ndash;50 A arcs (96 events)</td><td>91.7% / 100%</td><td>0% / 3.1%</td></tr>
   <tr><td>Look-alike events with no operation (security), 720 events</td><td><b>100% (0 false alarms)</b></td><td>98.6% (10 welder trips)</td></tr>
   <tr><td>Detection time after HIF onset, median / 95th percentile</td><td>0.28 s / 0.32 s</td><td>n/a</td></tr>

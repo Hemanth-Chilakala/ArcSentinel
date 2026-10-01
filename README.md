@@ -12,7 +12,7 @@ IEC 61850 networks (PRP on both Gigabit Ethernet ports).
 
 | Pre-proposal model (synthetic data, held-out set) | ArcSentinel (int8) | 51N + inrush restraint |
 |---|---|---|
-| High-impedance faults detected (120 events, 0.5–50 A arc current) | **98.3%** | 2.5% |
+| High-impedance faults detected (120 events, 0.4–40 A rms arc current) | **98.3%** | 2.5% |
 | … of which sub-1 A arcs (24 events) | **91.7%** | 0% |
 | Look-alike events with no false operation (720 events) | **100%** | 98.6% |
 | Median detection time after onset | **0.28 s** | n/a |
